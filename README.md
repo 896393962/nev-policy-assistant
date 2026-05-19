@@ -1,417 +1,192 @@
-# 新能源汽车政策与产业信息分析助手 (NEV Policy & Industry Assistant)
+# 新能源汽车政策与产业信息分析助手
 
-一个基于 AI 的新能源汽车行业研究助手，面向补贴政策查询、地方准入规则对比、充电设施规划、竞品技术路线调研和产业链信息整理等场景。系统融合本地政策库 RAG、Bocha 实时网页搜索、Text2SQL、数据可视化和多 Agent 深度研究报告生成。
+本项目是一个面向产业研究、企业分析、政策评估和技术趋势研判的多智能体深度研究系统。系统通过本地知识库、网络搜索、数据分析、代码沙箱和报告生成链路，将分散的信息源整合为可解释、可追溯、可视化的深度研究报告。
 
-## 核心能力
-- 新能源汽车政策库：按地区、发布时间、政策类型组织补贴、牌照、准入、充电设施和产业扶持信息。
-- RAG 检索：使用 Milvus + DashScope Embedding 建立 1024 维向量库，支持文档切片、元数据过滤、TopK 召回和引用溯源。
-- 实时 WebSearch：接入 Bocha Search，扩大召回后按来源质量、发布时间和去重策略筛选进入上下文。
-- 多 Agent 报告：Architect / Scout / DataAnalyst / CodeWizard / Writer / Critic 协作完成规划、搜索、数据分析、图表生成、报告撰写和审核修订。
-- 工程化交互：FastAPI + SSE 推送搜索、分析、写作、审核和 checkpoint 状态，React 前端展示过程、来源和图表。
+![深度研究可视化报告](docs/images/1280X1280.PNG)
 
-## 目录
-- [运行效果展示](#运行效果展示)
-- [环境要求](#环境要求)
-- [快速启动](#快速启动)
-- [详细配置](#详细配置)
-- [常见问题](#常见问题)
+## 一、项目定位
 
----
+### 1.1 项目概述
 
-## 运行效果展示
+系统围绕“行业信息分析”这一核心任务构建，支持从用户问题出发，自动完成研究计划拆解、信息检索、数据提取、图表生成、报告撰写、质量审核和补充修订。与普通问答系统不同，本项目强调研究过程可见、引用来源可查、数据结论可解释，并通过多 Agent 协作提升报告质量。
 
-以下截图来自本地完整运行验证：后端 FastAPI 运行在 `http://127.0.0.1:8000`，前端 Vite 运行在 `http://127.0.0.1:5173`。本机已有其他服务占用 `5432/6379`，所以本次运行将项目 PostgreSQL/Redis 分别映射到 `15432/16379`，Milvus 复用本地 `19530`。
+### 1.2 应用场景
 
-### 应用首页
+1. 行业研究报告生成
 
-首页默认进入新能源汽车行业，突出“新能源汽车政策与产业信息分析助手”的项目定位，并保留可扩展的行业入口能力。
+快速了解某个行业的市场规模、竞争格局和技术趋势，生成符合投行、咨询和产业研究场景的深度研究报告。
 
-![应用首页](docs/images/home-market.png)
+2. 企业竞争分析
 
-### 智能问答工作台
+分析特定企业的市场地位、业务模式和财务表现，支持横向对比多个竞争对手。
 
-点击新能源汽车卡片后进入聊天工作台，页面展示新能源政策与产业分析的推荐问题、搜索模式、附件入口和热门资讯，可用于补贴政策查询、地方准入规则归纳、竞品技术路线对比和产业链信息整理。
+3. 政策影响评估
 
-![智能问答工作台](docs/images/chat-workbench.png)
+追踪政策变化对行业、企业和产业链的影响，辅助预测政策趋势和潜在机会。
 
-### 后端 API 文档
+4. 技术趋势研判
 
-后端 OpenAPI 文档已更新为新能源项目语义，包含认证、会话、知识库、文档、搜索、资讯、招投标和深度研究等接口，便于联调和功能展示。
+识别新兴技术的发展阶段，评估技术成熟度、商业化前景和产业落地风险。
 
-![后端 API 文档](docs/images/api-docs.png)
+## 二、核心能力拆解
 
----
+### 2.1 多智能体协作架构
 
-## 环境要求
+本项目采用 6 个专业 Agent 分工协作的模式，每个 Agent 各司其职，共同完成从研究规划到报告审核的完整流程。
 
-| 依赖 | 版本要求 | 说明 |
-|------|---------|------|
-| Docker | 20.0+ | 运行所有基础服务（PostgreSQL、Redis、Milvus、Elasticsearch） |
-| Python | 3.10+ | 后端服务 |
-| Node.js | 18+ | 前端构建 |
+| Agent 角色 | 英文名 | 核心职责 | 使用模型 |
+| --- | --- | --- | --- |
+| 总架构师 | ChiefArchitect | 问题分析、大纲规划 | deepseek v4 flash |
+| 深度侦探 | DeepScout | 全网搜索、信息收集 | deepseek v4 pro |
+| 数据分析师 | DataAnalyst | 数据提取、知识图谱构建 | deepseek v4 flash |
+| 代码极客 | CodeWizard | 数据可视化、图表生成 | deepseek v4 flash |
+| 首席笔杆 | LeadWriter | 报告撰写、内容整合 | deepseek v4 flash |
+| 审核大师 | CriticMaster | 对抗式审核、质量把控 | deepseek v4 flash |
 
----
+参考文件位置：`backend/app/service/deep_research_v2/agents/`
 
-## 快速启动
+核心文件包括：`architect.py`、`scout.py`、`data_analyst.py`、`wizard.py`、`writer.py`、`critic.py`。
 
-### 1. 下载项目
-```bash
-cd industry_information_assistant
-```
+### 2.2 LangGraph 工作流编排
 
-### 2. 一键启动所有基础服务 (推荐)
+系统采用 LangGraph 构建状态机工作流，实现智能路由和循环审核机制。工作流会根据研究进度和审核反馈，决定是否进入补充搜索、数据分析、报告修订或最终输出阶段。
 
-**方式 A: 使用启动脚本（推荐）**
-```bash
-# 在项目根目录执行
-chmod +x start-services.sh
-./start-services.sh start
-```
+参考文件位置：`backend/app/service/deep_research_v2/graph.py`
 
-**方式 B: 使用 Docker Compose**
-```bash
-# 在项目根目录执行
-docker compose up -d
-```
+关键特性：
 
-验证服务状态：
-```bash
-# 方式 A
-./start-services.sh status
+- 条件路由：审核后智能判断是否需要补充搜索或修订。
+- 状态持久化：全局状态在所有 Agent 间共享。
+- 实时流式输出：通过 SSE 向前端推送研究进度。
 
-# 方式 B
-docker compose ps
+### 2.3 全局工作记忆
 
-# 应该看到以下服务运行中:
-# - industry_postgres (PostgreSQL)
-# - industry_redis (Redis)
-# - industry_milvus (Milvus)
-# - industry_elasticsearch (Elasticsearch)
-# - industry_minio (MinIO)
-# - industry_etcd (etcd)
-```
+所有 Agent 共享一个全局状态对象 `ResearchState`，用于沉淀研究过程中的大纲、事实、数据、图表、草稿、参考文献和审核反馈。
 
-**服务访问地址：**
-- PostgreSQL: `localhost:5432` (用户名: `postgres`, 密码: `postgres123`)
-- Redis: `localhost:6379`
-- Milvus: `localhost:19530`
-- Elasticsearch: `localhost:1200`
-- MinIO Console: `localhost:9001` (admin/minioadmin)
+| 状态字段 | 数据类型 | 说明 |
+| --- | --- | --- |
+| `outline` | `List[Section]` | 动态研究大纲 |
+| `facts` | `List[Fact]` | 结构化事实库，带可信度评分 |
+| `data_points` | `List[DataPoint]` | 数据点集合 |
+| `charts` | `List[Chart]` | 生成的可视化图表 |
+| `draft_sections` | `Dict[str, str]` | 章节草稿 |
+| `final_report` | `str` | 最终 Markdown 报告 |
+| `references` | `List[Reference]` | 参考文献 |
+| `critic_feedback` | `List[Feedback]` | 审核反馈 |
+| `knowledge_graph` | `Dict` | 知识图谱 |
 
-**端口冲突时的本地运行方式：**
+参考文件位置：`backend/app/service/deep_research_v2/state.py`
 
-如果 `5432` 或 `6379` 已被其他服务占用，可以单独启动项目数据库和缓存，并在启动后端前覆盖端口：
+### 2.4 双模式信息检索
 
-```powershell
-docker run -d --name industry_postgres -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres123 -e POSTGRES_DB=industry_assistant -p 15432:5432 postgres:15-alpine
-docker run -d --name industry_redis -p 16379:6379 redis:7-alpine redis-server --appendonly yes
+1. 网络搜索模式
 
-$env:POSTGRES_PORT='15432'
-$env:REDIS_PORT='16379'
-python app/app_main.py
-```
+- 搜索引擎：Bocha Web Search API。
+- 深度阅读：使用 trafilatura 提取网页正文。
+- 递归搜索：发现新线索后自动深挖。
+- 信源评级：对来源进行可信度评分，范围为 0 到 1。
 
-### 3. 配置环境变量
+参考文件位置：`backend/app/service/deep_research_v2/agents/scout.py`
 
-```bash
-cd backend
+信源评分规则：
 
-# 复制示例配置文件
-cp .env.example .env
+| 来源类型 | 可信度范围 |
+| --- | --- |
+| 官方来源，政府、央企等 | 0.9-1.0 |
+| 学术来源，论文、研究机构等 | 0.8-0.95 |
+| 权威媒体，央媒、财经媒体等 | 0.7-0.85 |
+| 行业报告，券商、咨询机构等 | 0.7-0.9 |
+| 一般新闻 | 0.5-0.7 |
+| 自媒体 | 0.2-0.5 |
 
-# 编辑 .env 文件，填入你的 API Key
-```
+2. 本地知识库模式
 
-**必填的 API Key（其他配置已预配置好）：**
-```env
-# 阿里云百炼 (LLM & Embedding) - 必填
-DASHSCOPE_API_KEY=your-dashscope-api-key
+- 向量检索：使用 Milvus 向量数据库。
+- 语义搜索：基于阿里 `text-embedding-v4` 模型。
+- 文档解析：支持 PDF、Word、Excel 等多种格式。
+- 分块索引：智能文档分块，保留上下文信息。
 
-# 搜索服务 - 必填
-BOCHA_API_KEY=your-bocha-api-key
+参考文件位置：`backend/app/service/milvus_service.py`
 
-# PostgreSQL 配置（已在 Docker 中配置，通常无需修改）
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres123
-POSTGRES_DB=industry_assistant
+### 2.5 数据分析与可视化
 
-# JWT 密钥（生产环境建议修改）
-JWT_SECRET_KEY=your-super-secret-key-change-in-production
-```
+数据提取能力：
 
-**注意：**
-- PostgreSQL、Redis、Milvus 的配置已在 Docker Compose 中设置好
-- `.env.example` 文件中的默认值与 Docker 配置匹配
-- 如果使用 Docker，数据库相关配置**通常无需修改**
-- 生产环境务必修改 `JWT_SECRET_KEY` 为随机密钥
+- 从非结构化文本中提取结构化数据点。
+- 识别时间序列数据。
+- 计算市场份额、增长率等关键指标。
+- 对数据进行交叉验证和去重。
 
-### 4. 安装后端依赖 & 启动
+可视化生成能力：
 
-```bash
-cd backend
+- ECharts 图表：由 DataAnalyst 生成配置，前端直接渲染。
+- Python 绘图：由 CodeWizard 执行 Python 代码生成 PNG 图片。
+- 图表类型：折线图、柱状图、饼图、雷达图、桑基图和知识图谱。
 
-# 创建虚拟环境 (推荐)
-conda create -n deepresearch python=3.10
-conda activate deepresearch
+参考文件位置：`backend/app/service/deep_research_v2/agents/data_analyst.py`
 
-# 安装依赖
-pip install -r requirements.txt
+这些 Prompt 用于指导 LLM 从文本中提取数据、构建知识图谱并生成 ECharts 配置。
 
-# 启动后端服务
-python app/app_main.py
-```
+### 2.6 代码沙箱执行
 
-后端默认运行在 `http://localhost:8000`
+CodeWizard Agent 拥有唯一的 Python 代码执行权限，用于数据分析和绘图。
 
-### 5. 安装前端依赖 & 启动
+安全机制：
 
-```bash
-cd frontend
+- 白名单模式：只允许导入 pandas、numpy、matplotlib 等特定模块。
+- 禁止列表：禁止文件操作、网络请求和系统调用。
+- 隔离环境：在独立的全局作用域中执行代码。
+- 自愈能力：执行失败时自动调用 LLM 修复代码。
 
-# 安装依赖
-npm install --legacy-peer-deps
+参考文件位置：`backend/app/service/deep_research_v2/agents/wizard.py`
 
-# 开发模式启动
-npm run dev
-```
+## 三、技术与数据底座
 
-前端默认运行在 `http://localhost:5173/login`
+### 3.1 信息检索
 
----
+- 网络检索：Bocha Web Search API。
+- 网页正文抽取：trafilatura。
+- 检索增强生成：结合网络搜索、本地知识库和多轮研究状态。
 
-## 详细配置
+### 3.2 向量数据库
 
-### 环境变量说明
+- 技术：Milvus 2.x。
+- 嵌入模型：阿里 `text-embedding-v4`，1024 维。
+- 存储方式：PostgreSQL 元数据与 Milvus 向量索引结合。
 
-#### 必填配置
+### 3.3 数据库与缓存
 
-| 变量名 | 说明 | 申请地址 |
-|--------|------|----------|
-| `DASHSCOPE_API_KEY` | 阿里云百炼 (LLM & Embedding) | https://bailian.console.aliyun.com/ |
-| `BOCHA_API_KEY` | 博查搜索 API | https://open.bochaai.com/ |
-| `POSTGRES_*` | PostgreSQL 连接配置 | - |
-| `REDIS_HOST/PORT` | Redis 连接配置 | - |
-| `MILVUS_HOST/PORT` | Milvus 向量数据库配置 | - |
-| `JWT_SECRET_KEY` | JWT 认证密钥 (自定义字符串) | - |
+- 主数据库：PostgreSQL，用于用户、会话和知识库元数据。
+- 缓存：Redis，用于检查点、会话状态和中间结果。
 
-#### 其它配置
+### 3.4 前后端交互
 
-| 变量名 | 说明 | 申请地址 |
-|--------|------|----------|
-| `DOCMIND_ACCESS_KEY_ID` | 阿里云 DocMind 文档解析 | https://help.aliyun.com/zh/ram/user-guide/create-an-accesskey-pair |
-| `DOCMIND_ACCESS_KEY_SECRET` | 阿里云 DocMind Secret | 同上 |
-| `BID_APP_KEY` | 招投标信息 API | https://market.aliyun.com/detail/cmapi00063550?spm=5176.730005.result.20.3188414aM3Wls9&innerSource=search_%E6%8B%9B%E6%8A%95%E6%A0%87#sku=yuncode5755000002 |
-| `BID_APP_SECRET` | 招投标 API Secret | 同上 |
-| `BID_APP_CODE` | 招投标 API Code | 同上 |
-| `JUHE_STOCK_API_KEY` | 聚合数据 - 股票行情 | https://www.juhe.cn/docs/api/id/21 |
-| `OPENROUTER_API_KEY` | OpenRouter (多模型网关) | https://openrouter.ai/ |
+- 后端：FastAPI。
+- 前端：React、Vite、Ant Design。
+- 实时进度：通过 SSE 推送 Agent 执行阶段、检索状态、图表和报告内容。
 
+## 四、关键设计原则
 
-### 高级部署选项
+### 4.1 可解释性优先
 
-#### 使用本地 PostgreSQL（不推荐新手）
+- 所有结论必须带有来源引用。
+- 数据点带可信度评分。
+- 保留完整的执行日志和过程报告。
 
-如果你想使用本地安装的 PostgreSQL 而不是 Docker：
+### 4.2 质量高于速度
 
-1. **安装 PostgreSQL**
-   ```bash
-   # macOS
-   brew install postgresql@15
-   brew services start postgresql@15
-   ```
+- 通过审核和修订循环提升报告质量。
+- 对关键信息进行多源验证。
+- 拒绝生成无依据内容。
 
-2. **创建数据库和用户**
-   ```bash
-   # 连接 PostgreSQL
-   psql postgres
+### 4.3 模块化与可扩展
 
-   # 创建用户
-   CREATE USER postgres WITH PASSWORD 'postgres123';
+- Agent 职责单一，便于替换和扩展。
+- 状态机设计清晰，便于新增阶段。
+- 支持新增数据源、工具和行业配置。
 
-   # 创建数据库
-   CREATE DATABASE industry_assistant OWNER postgres;
+### 4.4 用户体验至上
 
-   # 退出
-   \q
-   ```
-
-3. **修改 Docker Compose 配置**
-   ```bash
-   # 编辑 docker-compose.yml，注释掉 postgres 服务
-   # 或者使用 backend/docker-compose-base.yml（只包含 Redis 和 Milvus）
-   cd backend
-   docker compose -f docker-compose-base.yml up -d
-   ```
-
-4. **确保 `.env` 配置正确**
-   ```env
-   POSTGRES_HOST=localhost
-   POSTGRES_PORT=5432
-   POSTGRES_USER=postgres
-   POSTGRES_PASSWORD=postgres123
-   POSTGRES_DB=industry_assistant
-   ```
-
-### 数据库初始化
-
-首次启动时，后端会自动创建数据库表。如果遇到问题，可手动执行：
-
-```sql
--- 连接数据库
--- Docker: docker exec -it industry_postgres psql -U postgres -d industry_assistant
--- 本地: psql -U postgres -d industry_assistant
-
--- 确保 research_checkpoints 表有完整的列
-ALTER TABLE research_checkpoints ADD COLUMN IF NOT EXISTS ui_state_json JSONB;
-ALTER TABLE research_checkpoints ADD COLUMN IF NOT EXISTS final_report TEXT;
-```
-
-### 服务管理
-
-#### 使用启动脚本（推荐）
-
-```bash
-# 启动所有服务
-./start-services.sh start
-
-# 查看服务状态
-./start-services.sh status
-
-# 查看日志
-./start-services.sh logs              # 所有服务
-./start-services.sh logs postgres     # 特定服务
-
-# 重启服务
-./start-services.sh restart
-
-# 停止服务
-./start-services.sh stop
-
-# 清理数据（危险操作！）
-./start-services.sh clean
-```
-
-#### 使用 Docker Compose
-
-```bash
-# 启动
-docker compose up -d
-
-# 查看状态
-docker compose ps
-
-# 查看日志
-docker compose logs -f
-docker compose logs -f postgres    # 特定服务
-
-# 停止
-docker compose down
-
-# 停止并删除数据卷（危险操作！）
-docker compose down -v
-```
-
-### 上传测试文档 (可选)
-
-```bash
-cd backend
-curl -X POST "http://localhost:8000/documents/upload" \
-  -H "Content-Type: multipart/form-data" \
-  -F "file=@./test/test_doc.pdf"
-```
-
----
-
-## 常见问题
-
-### Q: Docker 容器启动失败？
-```bash
-# 使用启动脚本查看状态
-./start-services.sh status
-
-# 查看具体服务日志
-./start-services.sh logs postgres    # 查看 PostgreSQL 日志
-./start-services.sh logs             # 查看所有服务日志
-
-# 重启所有容器
-./start-services.sh restart
-
-# 或使用 Docker Compose
-docker compose down
-docker compose up -d
-```
-
-### Q: 后端连接数据库失败？
-**常见原因：**
-1. Docker 服务未启动
-   ```bash
-   ./start-services.sh status   # 检查服务状态
-   ./start-services.sh start    # 启动服务
-   ```
-
-2. `.env` 文件配置错误
-   ```bash
-   # 确保配置与 Docker 一致
-   POSTGRES_USER=postgres
-   POSTGRES_PASSWORD=postgres123
-   POSTGRES_DB=industry_assistant
-   ```
-
-3. 端口被占用（如已安装本地 PostgreSQL）
-   ```bash
-   # 停止本地 PostgreSQL（如果有）
-   brew services stop postgresql
-   # 或者修改 docker-compose.yml 中的端口映射
-   ```
-
-### Q: 前端 npm install 报错？
-```bash
-# 使用 legacy-peer-deps 解决依赖冲突
-npm install --legacy-peer-deps
-
-# 或清除缓存后重试
-rm -rf node_modules package-lock.json
-npm install --legacy-peer-deps
-```
-
-### Q: 研究历史无法恢复右侧面板数据？
-执行数据库迁移：
-```sql
-ALTER TABLE research_checkpoints ADD COLUMN IF NOT EXISTS ui_state_json JSONB;
-ALTER TABLE research_checkpoints ADD COLUMN IF NOT EXISTS final_report TEXT;
-```
-然后重启后端服务。
-
----
-
-## 项目结构
-
-```
-industry_information_assistant/
-├── backend/
-│   ├── app/
-│   │   ├── api/          # API 路由
-│   │   ├── core/         # 核心配置
-│   │   ├── models/       # 数据模型
-│   │   ├── service/      # 业务逻辑
-│   │   └── app_main.py   # 入口文件
-│   ├── docker-compose-base.yml
-│   ├── requirements.txt
-│   └── .env
-├── frontend/
-│   ├── src/
-│   │   ├── api/          # API 调用
-│   │   ├── components/   # 组件
-│   │   ├── pages/        # 页面
-│   │   └── store/        # 状态管理
-│   └── package.json
-└── READMED.md
-```
-
----
-
-## API 文档
-
-启动后端后访问：`http://localhost:8000/docs`
+- 实时展示研究进度。
+- 支持中途取消和恢复。
+- 提供可视化过程报告，帮助用户理解研究链路。
